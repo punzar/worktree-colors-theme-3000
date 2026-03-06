@@ -27,7 +27,8 @@
     "compile": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --sourcemap",
     "watch": "npm run compile -- --watch",
     "pretest": "npm run compile && tsc -p tsconfig.test.json",
-    "test": "node out/test/runTest.js",
+    "test": "mocha 'out/test/unit/**/*.test.js' --ui tdd --timeout 10000",
+    "test:vscode": "node out/test/runTest.js",
     "package": "npx vsce package"
   },
   "devDependencies": {
