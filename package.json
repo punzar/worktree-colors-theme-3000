@@ -1,0 +1,42 @@
+{
+  "name": "worktree-colors-theme-3000",
+  "displayName": "Worktree Colors Theme 3000",
+  "description": "Automatically assigns unique color themes to different git worktree directories",
+  "version": "0.0.1",
+  "publisher": "punzar",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Themes",
+    "Other"
+  ],
+  "keywords": [
+    "worktree",
+    "git",
+    "color",
+    "theme"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {},
+  "scripts": {
+    "compile": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --sourcemap",
+    "watch": "npm run compile -- --watch",
+    "pretest": "npm run compile && tsc -p tsconfig.test.json",
+    "test": "node out/test/runTest.js",
+    "package": "npx vsce package"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/test-electron": "^2.3.8",
+    "esbuild": "^0.19.11",
+    "mocha": "^10.2.0",
+    "typescript": "^5.3.3"
+  }
+}

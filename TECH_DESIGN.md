@@ -171,6 +171,182 @@ npm test
 - **Testing:** VS Code Extension Test framework + Mocha
 - **Packaging:** vsce
 
+## Implementation Phases (TDD)
+
+Each phase follows Red-Green-Refactor: write failing tests first, implement the minimum code to pass, then refactor.
+
+### Phase 0: Project Scaffold
+
+**Goal:** Working build, test runner, and extension that activates without errors.
+
+**Steps:**
+1. Initialize project: `npm init`, install dev dependencies (`@types/vscode`, `@types/mocha`, `typescript`, `esbuild`, `@vscode/test-electron`, `mocha`).
+2. Configure `tsconfig.json`, `esbuild.config.mjs`, `.vscodeignore`.
+3. Create `package.json` extension manifest with `activationEvents: ["onStartupFinished"]`, empty `contributes`.
+4. Create minimal `src/extension.ts` with empty `activate` / `deactivate`.
+5. Create test runner config (`src/test/runTest.ts`, `src/test/suite/index.ts`).
+6. Verify: `npm run compile` succeeds, `npm test` runs with 0 tests.
+
+**Exit criteria:** Green CI — project compiles, test harness runs, extension activates in Extension Development Host.
+
+---
+
+### Phase 1: Color Generation (Pure Logic)
+
+**Goal:** Deterministic, tested color generation with no VS Code dependencies.
+
+**Tests first** (`src/test/suite/color-generator.test.ts`):
+```typescript
+// RED: write these tests before any implementation
+it('returns a valid hex color palette for a given identifier')
+it('is deterministic — same input always produces same output')
+it('produces different hues for different identifiers')
+it('respects saturation and lightness parameters')
+it('generates light foreground for dark backgrounds and vice versa')
+it('adjusts palette for light theme kind vs dark theme kind')
+```
+
+**Then implement** (`src/color-generator.ts`):
+- `hashString(input: string): number` — FNV-1a hash
+- `hslToHex(h: number, s: number, l: number): string`
+- `contrastForeground(bgHex: string): string`
+- `generatePalette(identifier: string, config: ColorConfig): ColorPalette`
+
+**Refactor:** Extract `ColorPalette` and `ColorConfig` types to a shared `types.ts` if needed.
+
+**Exit criteria:** All color generation tests green. No VS Code API imports in this module.
+
+---
+
+### Phase 2: Worktree Detection
+
+**Goal:** Reliably detect git worktrees and extract identifiers.
+
+**Tests first** (`src/test/suite/worktree-detector.test.ts`):
+```typescript
+// RED: write these tests before any implementation
+it('returns worktree info when inside a git worktree')
+it('returns null when not inside a git repo')
+it('returns non-worktree info for a regular git repo')
+it('extracts worktree name from git-dir path')
+it('handles git command failures gracefully')
+```
+
+**Test setup:** Create temporary git repos and worktrees in a temp directory during `before()`. Clean up in `after()`.
+
+**Then implement** (`src/worktree-detector.ts`):
+- `execGit(args: string[], cwd: string): Promise<string>` — shell out to git
+- `detectWorktree(workspacePath: string): Promise<WorktreeInfo | null>`
+
+**Exit criteria:** All detection tests green against real git repos created in temp dirs.
+
+---
+
+### Phase 3: Configuration
+
+**Goal:** Type-safe config reading with defaults.
+
+**Tests first** (`src/test/suite/config.test.ts`):
+```typescript
+// RED: write these tests before any implementation
+it('returns default values when no config is set')
+it('reads saturation from workspace configuration')
+it('reads lightness based on theme kind')
+it('returns configured color targets')
+it('respects colorizeNonWorktree setting')
+```
+
+**Then implement** (`src/config.ts`):
+- `getConfig(): WorktreeColorsConfig` — reads from `vscode.workspace.getConfiguration('worktreeColors')`
+
+**Also:** Add `contributes.configuration` to `package.json` with all settings, types, defaults, and descriptions.
+
+**Exit criteria:** Config tests green. `package.json` contributes section complete.
+
+---
+
+### Phase 4: Theme Application
+
+**Goal:** Apply and remove color customizations without clobbering user settings.
+
+**Tests first** (`src/test/suite/theme-applier.test.ts`):
+```typescript
+// RED: write these tests before any implementation
+it('applies color palette to workbench.colorCustomizations')
+it('merges with existing user color customizations')
+it('only sets keys for configured color targets')
+it('reset removes only worktree-managed keys')
+it('reset preserves user-set color customizations')
+```
+
+**Test approach:** Mock `vscode.workspace.getConfiguration` to assert the correct keys and values are written.
+
+**Then implement** (`src/theme-applier.ts`):
+- `applyColors(palette: ColorPalette, targets: string[]): Promise<void>`
+- `resetColors(targets: string[]): Promise<void>`
+
+**Exit criteria:** All applier tests green. Manual verification in Extension Development Host that title bar changes color.
+
+---
+
+### Phase 5: Extension Wiring & Commands
+
+**Goal:** Full pipeline working end-to-end with all three commands.
+
+**Tests first** (`src/test/suite/extension.test.ts`):
+```typescript
+// RED: write these tests before any implementation
+it('activates without error')
+it('applies colors when workspace is a worktree')
+it('does nothing when workspace is not a worktree and colorizeNonWorktree is false')
+it('refresh command re-detects and reapplies')
+it('reset command removes all worktree colors')
+it('randomize command stores override in globalState and applies new color')
+it('reapplies colors when active color theme changes')
+```
+
+**Then implement** (`src/extension.ts`):
+- Wire the pipeline: detect → config → generate → apply
+- Register commands: `worktreeColors.refresh`, `worktreeColors.reset`, `worktreeColors.randomize`
+- Listen to `onDidChangeActiveColorTheme` to re-run pipeline
+- Store randomize overrides in `context.globalState`
+
+**Also:** Add `contributes.commands` to `package.json`.
+
+**Exit criteria:** All integration tests green. Manual E2E test: open two worktrees side-by-side and confirm they get different colors.
+
+---
+
+### Phase 6: Polish & Package
+
+**Goal:** Ready for marketplace publication.
+
+**Steps:**
+1. Add extension icon (128x128 PNG).
+2. Write marketplace description in `package.json` (`displayName`, `description`, `categories`, `keywords`).
+3. Add `.vscodeignore` to exclude test files, source maps, and config from the packaged extension.
+4. Run `npx vsce package` and verify the `.vsix` installs cleanly.
+5. Test on both dark and light themes.
+6. Test with no git repo, regular git repo, and git worktree.
+
+**Exit criteria:** `.vsix` installs, all tests green, all manual scenarios verified.
+
+---
+
+### Phase Summary
+
+| Phase | Module | Test Count (approx) | Depends On |
+|-------|--------|---------------------|------------|
+| 0 | Scaffold | 0 (build check) | — |
+| 1 | `color-generator.ts` | 6 | Phase 0 |
+| 2 | `worktree-detector.ts` | 5 | Phase 0 |
+| 3 | `config.ts` | 5 | Phase 0 |
+| 4 | `theme-applier.ts` | 5 | Phase 1 |
+| 5 | `extension.ts` | 7 | Phases 1-4 |
+| 6 | Packaging | 0 (manual) | Phase 5 |
+
+Phases 1, 2, and 3 are independent and can be worked on in parallel.
+
 ## Future Considerations
 
 - Support for Remote SSH / Dev Container / Codespaces worktrees
