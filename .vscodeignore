@@ -1,11 +1,15 @@
 .vscode/**
 .vscode-test/**
+.claude/**
 src/**
 out/**
 node_modules/**
 .gitignore
+.github/**
 tsconfig.json
 tsconfig.test.json
+TECH_DESIGN.md
+CLAUDE.md
 **/*.map
 **/*.ts
 !dist/**

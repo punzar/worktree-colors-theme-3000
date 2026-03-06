@@ -5,6 +5,10 @@
   "version": "0.0.1",
   "publisher": "punzar",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/punzar/worktree-colors-theme-3000"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },
