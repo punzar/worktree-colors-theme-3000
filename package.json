@@ -64,7 +64,21 @@
           "description": "Which UI elements to colorize"
         }
       }
-    }
+    },
+    "commands": [
+      {
+        "command": "worktreeColors.refresh",
+        "title": "Worktree Colors: Refresh"
+      },
+      {
+        "command": "worktreeColors.reset",
+        "title": "Worktree Colors: Reset"
+      },
+      {
+        "command": "worktreeColors.randomize",
+        "title": "Worktree Colors: Randomize"
+      }
+    ]
   },
   "scripts": {
     "compile": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --sourcemap",
