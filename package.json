@@ -22,7 +22,50 @@
     "onStartupFinished"
   ],
   "main": "./dist/extension.js",
-  "contributes": {},
+  "contributes": {
+    "configuration": {
+      "title": "Worktree Colors",
+      "properties": {
+        "worktreeColors.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable or disable worktree color customization"
+        },
+        "worktreeColors.saturation": {
+          "type": "number",
+          "default": 0.4,
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Color saturation (0-1)"
+        },
+        "worktreeColors.lightness": {
+          "type": "number",
+          "default": 0.3,
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Color lightness for dark themes (0-1)"
+        },
+        "worktreeColors.lightnessLight": {
+          "type": "number",
+          "default": 0.85,
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Color lightness for light themes (0-1)"
+        },
+        "worktreeColors.colorizeNonWorktree": {
+          "type": "boolean",
+          "default": false,
+          "description": "Also colorize regular (non-worktree) git repositories"
+        },
+        "worktreeColors.colorTargets": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": ["titleBar", "activityBar", "statusBar"],
+          "description": "Which UI elements to colorize"
+        }
+      }
+    }
+  },
   "scripts": {
     "compile": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --sourcemap",
     "watch": "npm run compile -- --watch",
