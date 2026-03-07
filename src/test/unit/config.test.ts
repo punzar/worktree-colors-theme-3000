@@ -64,4 +64,20 @@ suite('Config', () => {
 		});
 		assert.strictEqual(config.enabled, false);
 	});
+
+	test('reads customColors from configuration', () => {
+		const customColors = { 'feature-branch': '#ff0000', 'main-repo': '#00ff00' };
+		const config = getConfig({
+			get: <T>(key: string): T | undefined => {
+				if (key === 'customColors') { return customColors as T; }
+				return undefined;
+			}
+		});
+		assert.deepStrictEqual(config.customColors, customColors);
+	});
+
+	test('returns empty object for customColors when not configured', () => {
+		const config = getConfig({ get: () => undefined });
+		assert.deepStrictEqual(config.customColors, {});
+	});
 });

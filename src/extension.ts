@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { detectWorktree } from './worktree-detector';
-import { generatePalette, ColorConfig } from './color-generator';
+import { generatePalette, hexToHue, ColorConfig } from './color-generator';
 import { getConfig } from './config';
 import { applyColors, resetColors } from './theme-applier';
 
@@ -36,10 +36,14 @@ async function runPipeline(context: vscode.ExtensionContext): Promise<void> {
 	const isDark = vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Dark
 		|| vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.HighContrast;
 
+	const customHex = config.customColors[identifier];
+	const hueOverride = customHex ? Math.round(hexToHue(customHex) * 360) : undefined;
+
 	const colorConfig: ColorConfig = {
 		saturation: config.saturation,
 		lightness: isDark ? config.lightness : config.lightnessLight,
 		isDark,
+		hueOverride,
 	};
 
 	const palette = generatePalette(identifier, colorConfig);
