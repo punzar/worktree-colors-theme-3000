@@ -3,8 +3,10 @@ import { detectWorktree } from './worktree-detector';
 import { generatePalette, hexToHue, ColorConfig } from './color-generator';
 import { getConfig } from './config';
 import { applyColors, resetColors } from './theme-applier';
+import { formatStatusBarText } from './status-bar';
 
 const RANDOM_OVERRIDE_KEY = 'worktreeColors.randomOverride';
+let statusBarItem: vscode.StatusBarItem | undefined;
 
 async function runPipeline(context: vscode.ExtensionContext): Promise<void> {
 	const folders = vscode.workspace.workspaceFolders;
@@ -49,9 +51,22 @@ async function runPipeline(context: vscode.ExtensionContext): Promise<void> {
 	const palette = generatePalette(identifier, colorConfig);
 	const workbenchConfig = vscode.workspace.getConfiguration('workbench');
 	await applyColors(palette, config.colorTargets, workbenchConfig, vscode.ConfigurationTarget.Workspace);
+
+	// Update status bar indicator
+	if (statusBarItem) {
+		statusBarItem.text = formatStatusBarText(identifier);
+		statusBarItem.backgroundColor = undefined;
+		statusBarItem.tooltip = `Worktree: ${identifier} (${palette['titleBar.activeBackground']})`;
+		statusBarItem.show();
+	}
 }
 
 export function activate(context: vscode.ExtensionContext): void {
+	// Create status bar item
+	statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+	statusBarItem.command = 'worktreeColors.refresh';
+	context.subscriptions.push(statusBarItem);
+
 	// Run pipeline on activation
 	runPipeline(context);
 
@@ -76,6 +91,7 @@ export function activate(context: vscode.ExtensionContext): void {
 			const workbenchConfig = vscode.workspace.getConfiguration('workbench');
 			await resetColors(config.colorTargets, workbenchConfig, vscode.ConfigurationTarget.Workspace);
 			await context.globalState.update(RANDOM_OVERRIDE_KEY, undefined);
+			if (statusBarItem) { statusBarItem.hide(); }
 		})
 	);
 
