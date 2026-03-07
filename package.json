@@ -90,6 +90,10 @@
       {
         "command": "worktreeColors.randomize",
         "title": "Worktree Colors: Randomize"
+      },
+      {
+        "command": "worktreeColors.pickColor",
+        "title": "Worktree Colors: Pick Color"
       }
     ]
   },

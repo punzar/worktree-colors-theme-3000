@@ -4,6 +4,7 @@ import { generatePalette, hexToHue, ColorConfig } from './color-generator';
 import { getConfig } from './config';
 import { applyColors, resetColors } from './theme-applier';
 import { formatStatusBarText } from './status-bar';
+import { validateHexColor } from './color-picker';
 
 const RANDOM_OVERRIDE_KEY = 'worktreeColors.randomOverride';
 let statusBarItem: vscode.StatusBarItem | undefined;
@@ -100,6 +101,45 @@ export function activate(context: vscode.ExtensionContext): void {
 			const randomId = `random-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 			await context.globalState.update(RANDOM_OVERRIDE_KEY, randomId);
 			await runPipeline(context);
+		})
+	);
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand('worktreeColors.pickColor', async () => {
+			const hex = await vscode.window.showInputBox({
+				prompt: 'Enter a hex color for this worktree (e.g. #ff0000)',
+				placeHolder: '#ff0000',
+				validateInput: validateHexColor,
+			});
+			if (!hex) { return; }
+
+			const hue = Math.round(hexToHue(hex) * 360);
+			const isDark = vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Dark
+				|| vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.HighContrast;
+			const vsConfig = vscode.workspace.getConfiguration('worktreeColors');
+			const config = getConfig(vsConfig);
+
+			const colorConfig: ColorConfig = {
+				saturation: config.saturation,
+				lightness: isDark ? config.lightness : config.lightnessLight,
+				isDark,
+				hueOverride: hue,
+			};
+
+			const folders = vscode.workspace.workspaceFolders;
+			if (!folders || folders.length === 0) { return; }
+			const worktreeInfo = await detectWorktree(folders[0].uri.fsPath);
+			const identifier = worktreeInfo?.identifier ?? 'workspace';
+
+			const palette = generatePalette(identifier, colorConfig);
+			const workbenchConfig = vscode.workspace.getConfiguration('workbench');
+			await applyColors(palette, config.colorTargets, workbenchConfig, vscode.ConfigurationTarget.Workspace);
+
+			if (statusBarItem) {
+				statusBarItem.text = formatStatusBarText(identifier);
+				statusBarItem.tooltip = `Worktree: ${identifier} (${palette['titleBar.activeBackground']})`;
+				statusBarItem.show();
+			}
 		})
 	);
 }
