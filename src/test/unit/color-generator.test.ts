@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import { generatePalette, hashString, hslToHex, contrastForeground } from '../../color-generator';
+import { generatePalette, hashString, hslToHex, contrastForeground, hexToHue } from '../../color-generator';
 
 suite('Color Generator', () => {
 	test('hashString returns a consistent number for the same input', () => {
@@ -85,5 +85,44 @@ suite('Color Generator', () => {
 		const dark = generatePalette('branch', { saturation: 0.4, lightness: 0.3, isDark: true });
 		const light = generatePalette('branch', { saturation: 0.4, lightness: 0.85, isDark: false });
 		assert.notStrictEqual(dark['titleBar.activeBackground'], light['titleBar.activeBackground']);
+	});
+
+	test('hexToHue extracts hue from a red hex color', () => {
+		const hue = hexToHue('#ff0000');
+		assert.ok(hue >= 0 && hue < 1, `Expected hue near 0, got ${hue}`);
+	});
+
+	test('hexToHue extracts hue from a blue hex color', () => {
+		const hue = hexToHue('#0000ff');
+		assert.ok(hue > 0.6 && hue < 0.7, `Expected hue near 0.667, got ${hue}`);
+	});
+
+	test('hexToHue extracts hue from a green hex color', () => {
+		const hue = hexToHue('#00ff00');
+		assert.ok(hue > 0.3 && hue < 0.4, `Expected hue near 0.333, got ${hue}`);
+	});
+
+	test('hexToHue returns 0 for grayscale colors', () => {
+		assert.strictEqual(hexToHue('#808080'), 0);
+		assert.strictEqual(hexToHue('#000000'), 0);
+		assert.strictEqual(hexToHue('#ffffff'), 0);
+	});
+
+	test('generatePalette uses hueOverride when provided', () => {
+		const config = { saturation: 0.4, lightness: 0.3, isDark: true, hueOverride: 200 };
+		const p1 = generatePalette('ignored-identifier', config);
+		const p2 = generatePalette('different-identifier', config);
+		assert.deepStrictEqual(p1, p2);
+	});
+
+	test('generatePalette with hueOverride produces different colors than hash-based', () => {
+		const base = { saturation: 0.4, lightness: 0.3, isDark: true };
+		const withOverride = { ...base, hueOverride: 200 };
+		const hashBased = generatePalette('test-worktree', base);
+		const overridden = generatePalette('test-worktree', withOverride);
+		const hashHue = hashString('test-worktree') % 360;
+		if (hashHue !== 200) {
+			assert.notStrictEqual(hashBased['titleBar.activeBackground'], overridden['titleBar.activeBackground']);
+		}
 	});
 });
