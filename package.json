@@ -66,6 +66,15 @@
           "items": { "type": "string" },
           "default": ["titleBar", "activityBar", "statusBar"],
           "description": "Which UI elements to colorize"
+        },
+        "worktreeColors.customColors": {
+          "type": "object",
+          "default": {},
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "description": "Map worktree identifiers to specific hex colors (e.g. { \"feature-branch\": \"#ff0000\" })"
         }
       }
     },
@@ -81,6 +90,10 @@
       {
         "command": "worktreeColors.randomize",
         "title": "Worktree Colors: Randomize"
+      },
+      {
+        "command": "worktreeColors.pickColor",
+        "title": "Worktree Colors: Pick Color"
       }
     ]
   },

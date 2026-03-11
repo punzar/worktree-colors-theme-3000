@@ -2,6 +2,7 @@ export interface ColorConfig {
 	saturation: number;
 	lightness: number;
 	isDark: boolean;
+	hueOverride?: number;
 }
 
 export type ColorPalette = Record<string, string>;
@@ -46,10 +47,32 @@ export function contrastForeground(bgHex: string): string {
 	return luminance > 0.4 ? '#1e1e1e' : '#e0e0e0';
 }
 
+/** Extract hue (0-1 range) from a hex color string */
+export function hexToHue(hex: string): number {
+	const r = parseInt(hex.slice(1, 3), 16) / 255;
+	const g = parseInt(hex.slice(3, 5), 16) / 255;
+	const b = parseInt(hex.slice(5, 7), 16) / 255;
+
+	const max = Math.max(r, g, b);
+	const min = Math.min(r, g, b);
+	const delta = max - min;
+
+	if (delta === 0) { return 0; }
+
+	let h: number;
+	if (max === r) { h = ((g - b) / delta) % 6; }
+	else if (max === g) { h = (b - r) / delta + 2; }
+	else { h = (r - g) / delta + 4; }
+
+	h /= 6;
+	if (h < 0) { h += 1; }
+	return h;
+}
+
 /** Generate a full color palette from a worktree identifier and config */
 export function generatePalette(identifier: string, config: ColorConfig): ColorPalette {
 	const hash = hashString(identifier);
-	const hue = hash % 360;
+	const hue = config.hueOverride ?? hash % 360;
 	const { saturation, lightness } = config;
 
 	const titleBg = hslToHex(hue, saturation, lightness);

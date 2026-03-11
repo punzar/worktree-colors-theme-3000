@@ -5,6 +5,7 @@ export interface WorktreeColorsConfig {
 	lightnessLight: number;
 	colorizeNonWorktree: boolean;
 	colorTargets: string[];
+	customColors: Record<string, string>;
 }
 
 export const DEFAULTS: WorktreeColorsConfig = {
@@ -14,6 +15,7 @@ export const DEFAULTS: WorktreeColorsConfig = {
 	lightnessLight: 0.85,
 	colorizeNonWorktree: false,
 	colorTargets: ['titleBar', 'activityBar', 'statusBar'],
+	customColors: {},
 };
 
 export function getConfig(vsConfig?: { get<T>(key: string): T | undefined }): WorktreeColorsConfig {
@@ -28,5 +30,6 @@ export function getConfig(vsConfig?: { get<T>(key: string): T | undefined }): Wo
 		lightnessLight: vsConfig.get<number>('lightnessLight') ?? DEFAULTS.lightnessLight,
 		colorizeNonWorktree: vsConfig.get<boolean>('colorizeNonWorktree') ?? DEFAULTS.colorizeNonWorktree,
 		colorTargets: vsConfig.get<string[]>('colorTargets') ?? DEFAULTS.colorTargets,
+		customColors: vsConfig.get<Record<string, string>>('customColors') ?? DEFAULTS.customColors,
 	};
 }

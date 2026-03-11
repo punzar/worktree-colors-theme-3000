@@ -1,10 +1,14 @@
 import * as vscode from 'vscode';
 import { detectWorktree } from './worktree-detector';
-import { generatePalette, ColorConfig } from './color-generator';
+import { generatePalette, hexToHue, ColorConfig } from './color-generator';
 import { getConfig } from './config';
 import { applyColors, resetColors } from './theme-applier';
+import { formatStatusBarText } from './status-bar';
+import { validateHexColor } from './color-picker';
 
 const RANDOM_OVERRIDE_KEY = 'worktreeColors.randomOverride';
+const COLOR_OVERRIDE_KEY = 'worktreeColors.colorOverride';
+let statusBarItem: vscode.StatusBarItem | undefined;
 
 async function runPipeline(context: vscode.ExtensionContext): Promise<void> {
 	const folders = vscode.workspace.workspaceFolders;
@@ -17,15 +21,18 @@ async function runPipeline(context: vscode.ExtensionContext): Promise<void> {
 	const config = getConfig(vsConfig);
 
 	if (!config.enabled) {
+		if (statusBarItem) { statusBarItem.hide(); }
 		return;
 	}
 
 	const worktreeInfo = await detectWorktree(workspacePath);
 	if (!worktreeInfo) {
+		if (statusBarItem) { statusBarItem.hide(); }
 		return;
 	}
 
 	if (!worktreeInfo.isWorktree && !config.colorizeNonWorktree) {
+		if (statusBarItem) { statusBarItem.hide(); }
 		return;
 	}
 
@@ -36,18 +43,37 @@ async function runPipeline(context: vscode.ExtensionContext): Promise<void> {
 	const isDark = vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Dark
 		|| vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.HighContrast;
 
+	const colorOverride = context.globalState.get<string>(COLOR_OVERRIDE_KEY);
+	const customHex = colorOverride ?? config.customColors[identifier];
+	const hueOverride = (customHex && !validateHexColor(customHex))
+		? Math.round(hexToHue(customHex) * 360) : undefined;
+
 	const colorConfig: ColorConfig = {
 		saturation: config.saturation,
 		lightness: isDark ? config.lightness : config.lightnessLight,
 		isDark,
+		hueOverride,
 	};
 
 	const palette = generatePalette(identifier, colorConfig);
 	const workbenchConfig = vscode.workspace.getConfiguration('workbench');
 	await applyColors(palette, config.colorTargets, workbenchConfig, vscode.ConfigurationTarget.Workspace);
+
+	// Update status bar indicator
+	if (statusBarItem) {
+		statusBarItem.text = formatStatusBarText(identifier);
+		statusBarItem.backgroundColor = undefined;
+		statusBarItem.tooltip = `Worktree: ${identifier} (${palette['titleBar.activeBackground']})`;
+		statusBarItem.show();
+	}
 }
 
 export function activate(context: vscode.ExtensionContext): void {
+	// Create status bar item
+	statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+	statusBarItem.command = 'worktreeColors.refresh';
+	context.subscriptions.push(statusBarItem);
+
 	// Run pipeline on activation
 	runPipeline(context);
 
@@ -72,6 +98,8 @@ export function activate(context: vscode.ExtensionContext): void {
 			const workbenchConfig = vscode.workspace.getConfiguration('workbench');
 			await resetColors(config.colorTargets, workbenchConfig, vscode.ConfigurationTarget.Workspace);
 			await context.globalState.update(RANDOM_OVERRIDE_KEY, undefined);
+			await context.globalState.update(COLOR_OVERRIDE_KEY, undefined);
+			if (statusBarItem) { statusBarItem.hide(); }
 		})
 	);
 
@@ -82,8 +110,21 @@ export function activate(context: vscode.ExtensionContext): void {
 			await runPipeline(context);
 		})
 	);
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand('worktreeColors.pickColor', async () => {
+			const hex = await vscode.window.showInputBox({
+				prompt: 'Enter a hex color for this worktree (e.g. #ff0000)',
+				placeHolder: '#ff0000',
+				validateInput: validateHexColor,
+			});
+			if (!hex) { return; }
+			await context.globalState.update(COLOR_OVERRIDE_KEY, hex);
+			await runPipeline(context);
+		})
+	);
 }
 
 export function deactivate(): void {
-	// Nothing to clean up
+	statusBarItem = undefined;
 }
