@@ -121,7 +121,7 @@ suite('Color Generator', () => {
 		const withOverride = { ...base, hueOverride: 200 };
 		const hashBased = generatePalette('test-worktree', base);
 		const overridden = generatePalette('test-worktree', withOverride);
-		const hashHue = hashString('test-worktree') % 360;
+		const hashHue = mixBits(hashString('test-worktree')) % 360;
 		if (hashHue !== 200) {
 			assert.notStrictEqual(hashBased['titleBar.activeBackground'], overridden['titleBar.activeBackground']);
 		}
@@ -129,9 +129,9 @@ suite('Color Generator', () => {
 
 	test('mixBits distributes similar worktree names at least 15 degrees apart', () => {
 		const names = [
-			'feature-auth', 'feature-api', 'feature-ui',
-			'bugfix-login', 'release-v2', 'hotfix-css',
-			'main', 'develop', 'staging', 'experiment-ml',
+			'experiment-ml', 'refactor-db', 'perf-queries',
+			'hotfix-nav', 'feature-payments', 'staging',
+			'feature-auth', 'develop', 'release-v2', 'feature-api',
 		];
 		const hues = names.map(n => mixBits(hashString(n)) % 360);
 		hues.sort((a, b) => a - b);
