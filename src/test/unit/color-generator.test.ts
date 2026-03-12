@@ -127,6 +127,9 @@ suite('Color Generator', () => {
 		}
 	});
 
+	// Names chosen via greedy selection to achieve min 15-degree gap with mixBits.
+	// 360/10 = 36 would be perfect; 15 is intentionally conservative.
+	// If the hash or finalizer changes, these names may need re-selection.
 	test('mixBits distributes similar worktree names at least 15 degrees apart', () => {
 		const names = [
 			'feature-api', 'staging-2', 'feature-settings',
@@ -145,6 +148,7 @@ suite('Color Generator', () => {
 		assert.ok(wrapGap >= 15, `Wrap-around gap too small: ${wrapGap}`);
 	});
 
+	// Smoke test: documents the purity contract (no internal state or randomness).
 	test('mixBits is deterministic', () => {
 		const inputs = ['feature-auth', 'main', 'hotfix-css', 'a', 'abcdefghijklmnop'];
 		for (const input of inputs) {
