@@ -51,6 +51,12 @@ export default [
       '@typescript-eslint/prefer-readonly': 'error',
       'no-console': 'error',
 
+      // --- Complexity limits: prevent AI-generated sprawl ---
+      'max-lines-per-function': ['warn', { max: 50, skipBlankLines: true, skipComments: true }],
+      'max-params': ['warn', { max: 4 }],
+      'complexity': ['warn', { max: 10 }],
+      'max-depth': ['warn', { max: 3 }],
+
       // --- Import organization ---
       'import/order': ['error', {
         'groups': [
