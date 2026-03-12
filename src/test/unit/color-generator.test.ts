@@ -129,9 +129,9 @@ suite('Color Generator', () => {
 
 	test('mixBits distributes similar worktree names at least 15 degrees apart', () => {
 		const names = [
-			'experiment-ml', 'refactor-db', 'perf-queries',
-			'hotfix-nav', 'feature-payments', 'staging',
-			'feature-auth', 'develop', 'release-v2', 'feature-api',
+			'feature-api', 'staging-2', 'feature-settings',
+			'hotfix-css', 'feature-payments', 'feature-dashboard',
+			'staging', 'ci-pipeline', 'develop', 'feature-ui',
 		];
 		const hues = names.map(n => mixBits(hashString(n)) % 360);
 		hues.sort((a, b) => a - b);

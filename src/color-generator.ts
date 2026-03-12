@@ -19,9 +19,9 @@ export function hashString(input: string): number {
 
 /** Murmur3-style bit-mixing finalizer — ensures all output bits depend on all input bits */
 export function mixBits(h: number): number {
-	h = ((h >> 16) ^ h) * 0x85ebca6b >>> 0;
-	h = ((h >> 16) ^ h) * 0xc2b2ae35 >>> 0;
-	h = (h >> 16) ^ h;
+	h = ((h >>> 16) ^ h) * 0x85ebca6b >>> 0;
+	h = ((h >>> 16) ^ h) * 0xc2b2ae35 >>> 0;
+	h = (h >>> 16) ^ h;
 	return h >>> 0;
 }
 
