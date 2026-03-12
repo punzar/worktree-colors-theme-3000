@@ -1,6 +1,7 @@
 import * as assert from 'assert';
-import { generatePalette, hashString, hslToHex, contrastForeground, hexToHue } from '../../color-generator';
+import { generatePalette, hashString, hslToHex, contrastForeground, hexToHue, mixBits } from '../../color-generator';
 
+// eslint-disable-next-line max-lines-per-function
 suite('Color Generator', () => {
 	test('hashString returns a consistent number for the same input', () => {
 		const h1 = hashString('feature-branch');
@@ -120,9 +121,52 @@ suite('Color Generator', () => {
 		const withOverride = { ...base, hueOverride: 200 };
 		const hashBased = generatePalette('test-worktree', base);
 		const overridden = generatePalette('test-worktree', withOverride);
-		const hashHue = hashString('test-worktree') % 360;
+		const hashHue = mixBits(hashString('test-worktree')) % 360;
 		if (hashHue !== 200) {
 			assert.notStrictEqual(hashBased['titleBar.activeBackground'], overridden['titleBar.activeBackground']);
 		}
+	});
+
+	// Names chosen via greedy selection to achieve min 15-degree gap with mixBits.
+	// 360/10 = 36 would be perfect; 15 is intentionally conservative.
+	// If the hash or finalizer changes, these names may need re-selection.
+	test('mixBits distributes similar worktree names at least 15 degrees apart', () => {
+		const names = [
+			'feature-api', 'staging-2', 'feature-settings',
+			'hotfix-css', 'feature-payments', 'feature-dashboard',
+			'staging', 'ci-pipeline', 'develop', 'feature-ui',
+		];
+		const hues = names.map(n => mixBits(hashString(n)) % 360);
+		hues.sort((a, b) => a - b);
+
+		for (let i = 1; i < hues.length; i++) {
+			const gap = hues[i] - hues[i - 1];
+			assert.ok(gap >= 15, `Hues too close: ${hues[i - 1]} and ${hues[i]} (gap=${gap}) for sorted names`);
+		}
+		// Also check wrap-around gap
+		const wrapGap = 360 - hues[hues.length - 1] + hues[0];
+		assert.ok(wrapGap >= 15, `Wrap-around gap too small: ${wrapGap}`);
+	});
+
+	// Smoke test: documents the purity contract (no internal state or randomness).
+	test('mixBits is deterministic', () => {
+		const inputs = ['feature-auth', 'main', 'hotfix-css', 'a', 'abcdefghijklmnop'];
+		for (const input of inputs) {
+			const hash = hashString(input);
+			assert.strictEqual(mixBits(hash), mixBits(hash), `mixBits not deterministic for "${input}"`);
+		}
+	});
+
+	test('mixBits produces hues spanning at least 300 of 360 degrees', () => {
+		const seen = new Set<number>();
+		for (let i = 0; i < 100; i++) {
+			const name = `worktree-${i}-${String.fromCharCode(97 + (i % 26))}`;
+			const hue = mixBits(hashString(name)) % 360;
+			seen.add(Math.floor(hue));
+		}
+		const min = Math.min(...seen);
+		const max = Math.max(...seen);
+		const span = max - min;
+		assert.ok(span >= 300, `Hue span only ${span} degrees (${min}-${max}), expected >= 300`);
 	});
 });

@@ -17,6 +17,14 @@ export function hashString(input: string): number {
 	return hash;
 }
 
+/** Murmur3-style bit-mixing finalizer — ensures all output bits depend on all input bits */
+export function mixBits(h: number): number {
+	h = (((h >>> 16) ^ h) * 0x85ebca6b) >>> 0;
+	h = (((h >>> 16) ^ h) * 0xc2b2ae35) >>> 0;
+	h = (h >>> 16) ^ h;
+	return h >>> 0;
+}
+
 /** Convert HSL (h: 0-360, s: 0-1, l: 0-1) to hex color */
 export function hslToHex(h: number, s: number, l: number): string {
 	h = ((h % 360) + 360) % 360;
@@ -72,7 +80,7 @@ export function hexToHue(hex: string): number {
 /** Generate a full color palette from a worktree identifier and config */
 export function generatePalette(identifier: string, config: ColorConfig): ColorPalette {
 	const hash = hashString(identifier);
-	const hue = config.hueOverride ?? hash % 360;
+	const hue = config.hueOverride ?? mixBits(hash) % 360;
 	const { saturation, lightness } = config;
 
 	const titleBg = hslToHex(hue, saturation, lightness);
