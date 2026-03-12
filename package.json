@@ -111,7 +111,8 @@
     "test:vscode": "node out/test/runTest.js",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
-    "package": "npx vsce package"
+    "package": "npx vsce package",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.6",
@@ -123,7 +124,14 @@
     "esbuild": "^0.19.11",
     "eslint": "^9.39.4",
     "eslint-plugin-import": "^2.32.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.3.3",
     "mocha": "^10.2.0",
     "typescript": "^5.3.3"
+  },
+  "lint-staged": {
+    "src/**/*.ts": [
+      "eslint --max-warnings 0"
+    ]
   }
 }
