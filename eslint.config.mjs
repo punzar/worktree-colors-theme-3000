@@ -67,6 +67,40 @@ export default [
       'import/no-cycle': 'error',
     },
   },
+  // --- Architectural boundary: pipeline modules must not import each other ---
+  {
+    files: [
+      'src/color-generator.ts',
+      'src/worktree-detector.ts',
+      'src/config.ts',
+      'src/status-bar.ts',
+      'src/color-picker.ts',
+    ],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [
+          {
+            group: ['./*', '!./color-generator'],
+            message: 'Pipeline modules must not import each other. Only extension.ts orchestrates the pipeline. If you need a type, define an interface in the consuming module or extract a shared types file.',
+          },
+        ],
+      }],
+    },
+  },
+  // theme-applier is special: it imports the ColorPalette type from color-generator
+  {
+    files: ['src/theme-applier.ts'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [
+          {
+            group: ['./worktree-detector', './config', './extension', './status-bar', './color-picker'],
+            message: 'theme-applier may only import types from color-generator. It must not import other pipeline modules.',
+          },
+        ],
+      }],
+    },
+  },
   // Test files: relaxed rules
   {
     files: ['src/test/**/*.ts'],
