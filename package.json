@@ -63,8 +63,14 @@
         },
         "worktreeColors.colorTargets": {
           "type": "array",
-          "items": { "type": "string" },
-          "default": ["titleBar", "activityBar", "statusBar"],
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "titleBar",
+            "activityBar",
+            "statusBar"
+          ],
           "description": "Which UI elements to colorize"
         },
         "worktreeColors.customColors": {
@@ -103,15 +109,29 @@
     "pretest": "npm run compile && tsc -p tsconfig.test.json",
     "test": "mocha 'out/test/unit/**/*.test.js' --ui tdd --timeout 10000",
     "test:vscode": "node out/test/runTest.js",
-    "package": "npx vsce package"
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "package": "npx vsce package",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.6",
     "@types/node": "^20.11.0",
     "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^8.57.0",
+    "@typescript-eslint/parser": "^8.57.0",
     "@vscode/test-electron": "^2.3.8",
     "esbuild": "^0.19.11",
+    "eslint": "^9.39.4",
+    "eslint-plugin-import": "^2.32.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.3.3",
     "mocha": "^10.2.0",
     "typescript": "^5.3.3"
+  },
+  "lint-staged": {
+    "src/**/*.ts": [
+      "eslint --max-warnings 0"
+    ]
   }
 }

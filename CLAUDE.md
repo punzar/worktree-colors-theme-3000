@@ -77,3 +77,44 @@ If git-dir = git-common-dir → regular repo → check colorizeNonWorktree setti
 - Colors must be deterministic: same worktree path → same color
 - Must handle both dark and light themes (listen to `onDidChangeActiveColorTheme`)
 - Build tool is esbuild
+
+## Architectural Rules (Enforced by Linter)
+
+These rules are enforced by ESLint. Violations will block commits via pre-commit hook.
+
+### Dependency Direction
+
+- **Pipeline modules (`color-generator`, `worktree-detector`, `config`, `theme-applier`, `status-bar`, `color-picker`) MUST NOT import each other.**
+- Only `extension.ts` wires modules together — it is the composition root.
+- If a module needs a type from another module, use `import type` (type-only imports are allowed) or define an interface locally.
+- Exception: `theme-applier.ts` may import the `ColorPalette` type from `color-generator.ts`.
+
+### Type Safety
+
+- `any` is banned in production code (`src/*.ts` excluding tests). Use `unknown` and narrow with type guards.
+- All exported functions must have explicit return types.
+- All `Promise`-returning calls must be `await`ed or explicitly voided with `void`.
+- No non-null assertions (`!`). Use proper null checks.
+
+### Adding New Modules
+
+When adding a new module to the pipeline:
+1. Create the module in `src/` as a pure function with a single responsibility.
+2. Create unit tests in `src/test/unit/`.
+3. Wire it into the pipeline from `extension.ts` only.
+4. Add it to the `no-restricted-imports` boundary rules in `eslint.config.mjs`.
+5. Update the architecture diagram above.
+
+### Testing Rules
+
+- Every exported function must have a corresponding test file in `src/test/unit/`.
+- Tests for pure functions should not mock — use real inputs/outputs.
+- Tests for modules with side effects (like `theme-applier`) should inject dependencies via interfaces (e.g., `ConfigurationWriter`).
+- Test files may use `any` — they are exempt from strict type rules.
+
+## Lint Commands
+
+```bash
+npm run lint          # check for lint errors
+npm run lint:fix      # auto-fix what's possible
+```

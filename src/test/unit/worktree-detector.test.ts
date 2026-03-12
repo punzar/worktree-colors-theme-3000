@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
 import { execSync } from 'child_process';
-import { detectWorktree, WorktreeInfo } from '../../worktree-detector';
+import { detectWorktree } from '../../worktree-detector';
 
 suite('Worktree Detector', () => {
 	let tmpDir: string;
