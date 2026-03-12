@@ -75,19 +75,19 @@ export function activate(context: vscode.ExtensionContext): void {
 	context.subscriptions.push(statusBarItem);
 
 	// Run pipeline on activation
-	runPipeline(context);
+	void runPipeline(context);
 
 	// Re-run when color theme changes
 	context.subscriptions.push(
 		vscode.window.onDidChangeActiveColorTheme(() => {
-			runPipeline(context);
+			void runPipeline(context);
 		})
 	);
 
 	// Register commands
 	context.subscriptions.push(
 		vscode.commands.registerCommand('worktreeColors.refresh', () => {
-			runPipeline(context);
+			void runPipeline(context);
 		})
 	);
 

@@ -32,7 +32,7 @@ export function hslToHex(h: number, s: number, l: number): string {
 	else if (h < 300) { r = x; g = 0; b = c; }
 	else              { r = c; g = 0; b = x; }
 
-	const toHex = (v: number) => Math.round((v + m) * 255).toString(16).padStart(2, '0');
+	const toHex = (v: number): string => Math.round((v + m) * 255).toString(16).padStart(2, '0');
 	return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
